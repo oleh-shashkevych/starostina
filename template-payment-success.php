@@ -3,62 +3,100 @@
 Template Name: Результат Оплати
 */
 
-// Получаем ссылку на файл для JS
+// Получаем ссылку на файл для JS (из настроек лендинга)
 $front_page_id = get_option('page_on_front');
 if (function_exists('pll_get_post')) {
     $front_page_id = pll_get_post($front_page_id);
 }
 $file_url = get_field('product_file', $front_page_id);
 
+// Получаем тексты из ACF текущей страницы (шаблона успеха)
+// Используем get_queried_object_id() чтобы брать поля именно этой страницы
+$page_id = get_queried_object_id();
+
+$success_title = get_field('success_title', $page_id) ?: 'Payment Successful';
+$success_subtitle = get_field('success_subtitle', $page_id) ?: 'Click to download file';
+$download_btn_text = get_field('download_btn_text', $page_id) ?: 'Download PDF';
+$thank_you_text = get_field('thank_you_text', $page_id);
+$error_title = get_field('error_title', $page_id) ?: 'Ooops...';
+$error_text = get_field('error_text', $page_id) ?: 'Payment info not found.';
+
 get_header(); 
 ?>
 
-<section class="min-h-screen bg-beige-bg flex flex-col items-center justify-center text-center p-6">
-    <div class="max-w-3xl w-full animate-fade-in-up">
+<section class="min-h-screen bg-beige-bg flex flex-col items-center justify-center text-center p-6 md:p-8 relative">
+    
+    <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-black/10 to-transparent"></div>
+
+    <div class="max-w-3xl w-full animate-fade-in-up relative z-10">
         
-        <!-- LOADER & STATUS -->
+        <!-- LOADER -->
         <div id="status-block">
-            <h2 class="font-script text-4xl md:text-5xl mb-4 text-gray-800">
+            <h2 class="font-script text-4xl md:text-6xl mb-8 text-gray-800">
                 <?php echo function_exists('pll__') ? pll__('Checking payment status...') : 'Checking payment...'; ?>
             </h2>
-            <div class="text-4xl animate-spin text-gray-400">
-                <i class="fas fa-circle-notch"></i>
+            <div class="inline-block p-4 rounded-full bg-white/30 backdrop-blur-sm">
+                <i class="fas fa-circle-notch fa-spin text-3xl text-gray-600"></i>
             </div>
-            <p id="debug-text" class="mt-4 text-xs text-gray-400 font-mono"></p>
+            <p id="debug-text" class="mt-6 text-[10px] uppercase tracking-widest text-gray-400 font-sans"></p>
         </div>
 
-        <!-- SUCCESS (Hidden by default) -->
+        <!-- SUCCESS -->
         <div id="success-block" class="hidden">
-            <h2 class="font-script text-5xl md:text-7xl mb-2 text-gray-800">
-                <?php echo function_exists('pll__') ? pll__('Payment Successful') : 'Payment Successful'; ?>
+            <!-- Динамический заголовок из ACF -->
+            <h2 class="font-script text-5xl md:text-8xl mb-4 text-gray-900 transform -rotate-2">
+                <?php echo esc_html($success_title); ?>
             </h2>
-            <div class="h-px w-24 bg-black mx-auto mb-8"></div>
-            <h3 class="text-2xl md:text-4xl font-serif uppercase tracking-wider mb-6">
-                <?php echo function_exists('pll__') ? pll__('Click to download file') : 'Download your file'; ?>
+            
+            <div class="flex justify-center mb-10">
+                <div class="h-px w-16 md:w-24 bg-black/20"></div>
+            </div>
+
+            <!-- Динамический подзаголовок -->
+            <h3 class="text-lg md:text-3xl font-serif uppercase tracking-widest mb-8 text-gray-800 px-4">
+                <?php echo esc_html($success_subtitle); ?>
             </h3>
 
             <?php if($file_url): ?>
-            <a href="<?php echo esc_url($file_url); ?>" download class="inline-flex items-center gap-3 transform hover:scale-105 transition duration-300 bg-black text-white px-10 py-5 text-lg tracking-widest uppercase font-serif hover:bg-gray-800 shadow-2xl">
-                <i class="fas fa-file-pdf"></i> <?php echo function_exists('pll__') ? pll__('Download PDF') : 'Download PDF'; ?>
-            </a>
+            <div class="relative group inline-block w-full max-w-xs md:max-w-none">
+                <div class="absolute -inset-1 bg-black/10 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                <a href="<?php echo esc_url($file_url); ?>" download class="relative flex items-center justify-center gap-4 bg-black text-white px-8 py-5 md:px-12 md:py-6 text-xs md:text-base tracking-[0.2em] uppercase font-sans font-bold hover:bg-gray-800 transition-all duration-300 shadow-2xl w-full md:w-auto">
+                    <i class="fas fa-file-pdf text-xl md:text-2xl"></i> 
+                    <span><?php echo esc_html($download_btn_text); ?></span>
+                </a>
+            </div>
             <?php else: ?>
-                <div class="p-4 bg-red-100 text-red-700">File not configured. Contact admin.</div>
+                <div class="p-6 bg-red-50 border border-red-100 text-red-600 rounded-lg">
+                    <i class="fas fa-exclamation-triangle mb-2"></i><br>
+                    File not found. Please contact support.
+                </div>
+            <?php endif; ?>
+
+             <?php if($thank_you_text): ?>
+             <p class="mt-12 text-sm md:text-lg text-gray-600 font-serif italic max-w-xxl mx-auto leading-relaxed px-4">
+                <?php echo nl2br(esc_html($thank_you_text)); ?>
+            </p>
             <?php endif; ?>
         </div>
 
-        <!-- ERROR (Hidden by default) -->
+        <!-- ERROR -->
         <div id="error-block" class="hidden">
-            <h2 class="font-script text-5xl md:text-7xl mb-2 text-red-800">
-                Ooops...
+            <h2 class="font-script text-5xl md:text-7xl mb-6 text-red-900/80">
+                <?php echo esc_html($error_title); ?>
             </h2>
-            <p class="text-xl mb-4 text-gray-600" id="error-message">
-                Payment not found.
-            </p>
-            <button onclick="location.reload()" class="underline text-sm">Try again</button>
+            <div class="bg-white/50 p-6 md:p-8 rounded-xl backdrop-blur-sm border border-red-100 inline-block mx-4">
+                <p class="text-base md:text-lg mb-6 text-gray-700" id="error-message">
+                    <?php echo esc_html($error_text); ?>
+                </p>
+                <button onclick="location.href='<?php echo home_url(); ?>'" class="uppercase tracking-widest text-xs font-bold border-b border-black pb-1 hover:text-gray-600 transition">
+                    Try Again
+                </button>
+            </div>
         </div>
 
-        <div class="mt-12">
-            <a href="<?php echo home_url(); ?>" class="text-gray-500 text-sm hover:text-black underline underline-offset-4">
+        <div class="mt-16">
+            <a href="<?php echo home_url(); ?>" class="text-gray-400 text-[10px] uppercase tracking-[0.2em] hover:text-black transition duration-300">
+                <i class="fas fa-long-arrow-alt-left mr-2"></i>
                 <?php echo function_exists('pll__') ? pll__('Return to main') : 'Return to main'; ?>
             </a>
         </div>
@@ -73,24 +111,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMsg = document.getElementById('error-message');
     const debugText = document.getElementById('debug-text');
 
-    // 1. Ищем ID в URL (на всякий случай)
     const urlParams = new URLSearchParams(window.location.search);
     let invoiceId = urlParams.get('invoiceId');
 
-    // 2. Если нет в URL, ищем в LocalStorage
     if (!invoiceId) {
         invoiceId = localStorage.getItem('starostina_invoice_id');
-        debugText.innerText = "Checking LocalStorage...";
+        debugText.innerText = "Checking Storage...";
     } else {
         debugText.innerText = "Checking URL...";
     }
 
     if (!invoiceId) {
-        showError("Invoice ID not found. Please try purchasing again.");
+        showError("<?php echo esc_js($error_text); ?>");
         return;
     }
 
-    // 3. AJAX Проверка
+    // --- DEV MODE CHECK ---
+    if (invoiceId === 'test_mode_payment_ok') {
+        setTimeout(() => {
+            statusBlock.classList.add('hidden');
+            successBlock.classList.remove('hidden');
+            localStorage.removeItem('starostina_invoice_id');
+        }, 800);
+        return;
+    }
+    // ----------------------
+
     const formData = new FormData();
     formData.append('action', 'check_mono_status');
     formData.append('invoice_id', invoiceId);
@@ -102,26 +148,21 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // ОПЛАТА ПРОШЛА!
             statusBlock.classList.add('hidden');
             successBlock.classList.remove('hidden');
-            // Чистим storage, чтобы не мешал потом
             localStorage.removeItem('starostina_invoice_id');
         } else {
-            // Ошибка или статус не success
             showError("Payment status: " + (data.data?.status || "Unknown"));
-            console.log(data);
         }
     })
     .catch(err => {
         showError("Connection error.");
-        console.error(err);
     });
 
     function showError(msg) {
         statusBlock.classList.add('hidden');
         errorBlock.classList.remove('hidden');
-        errorMsg.innerText = msg;
+        if(msg) errorMsg.innerText = msg;
     }
 });
 </script>

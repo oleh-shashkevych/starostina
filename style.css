@@ -11,9 +11,44 @@ Text Domain: starostina
   поэтому здесь стилей будет минимум. 
 */
 
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
 body {
     overflow-x: hidden;
 }
+
+.current-lang {
+    display: none;
+}
+
+/* === НОВЫЙ КАСТОМНЫЙ СКРОЛЛБАР === */
+
+/* Firefox */
+html {
+    scrollbar-width: thin; /* Тонкий скроллбар */
+    scrollbar-color: #1a1a1a #efe3dd; /* Ползунок и Трек */
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+    width: 12px; /* Ширина всего элемента скроллбара */
+}
+
+::-webkit-scrollbar-track {
+    background: #efe3dd; /* Бежевый цвет фона (трека) */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #1a1a1a; /* Темно-серый цвет ползунка */
+    border-radius: 20px;       /* Полное скругление */
+    border: 3px solid #efe3dd; /* Внутренняя граница создает отступ, делая ползунок визуально тоньше и "парящим" */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #333333; /* Немного светлее при наведении */
+}
+
+/* ================================= */
 
 /* Анимации */
 .fade-in-up {

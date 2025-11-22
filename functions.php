@@ -4,6 +4,8 @@
 function starostina_scripts() {
     wp_enqueue_script('tailwind', 'https://cdn.tailwindcss.com', array(), '3.0', false);
     
+    // Конфигурация Tailwind
+    // ВАЖНО: В font-family 'script' мы ставим сначала Great Vibes, потом Marck Script
     wp_add_inline_script('tailwind', "
         tailwind.config = {
             theme: {
@@ -16,7 +18,10 @@ function starostina_scripts() {
                     fontFamily: {
                         'sans': ['Montserrat', 'sans-serif'],
                         'serif': ['Playfair Display', 'serif'],
-                        'script': ['Pinyon Script', 'cursive'],
+                        'script': ['Great Vibes', 'Marck Script', 'cursive'], 
+                    },
+                    screens: {
+                        'xs': '475px',
                     }
                 }
             }
@@ -24,10 +29,13 @@ function starostina_scripts() {
     ");
 
     wp_enqueue_style('fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-    wp_enqueue_style('google-fonts', 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+    
+    // UPDATED: Подключаем ВСЕ шрифты одной ссылкой (Great Vibes + Marck Script + остальные)
+    // Это самый надежный способ, чтобы Google отдал их все сразу.
+    wp_enqueue_style('google-fonts', 'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Marck+Script&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap&subset=cyrillic,latin');
+    
     wp_enqueue_style('main-style', get_stylesheet_uri());
 
-    // Передаем nonce и url для AJAX
     wp_localize_script('tailwind', 'wpData', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('monobank_nonce')
@@ -44,16 +52,9 @@ add_action('init', function() {
         pll_register_string('starostina', 'Click to pay', 'Starostina Theme');
         pll_register_string('starostina', 'Cost:', 'Starostina Theme');
         pll_register_string('starostina', 'Pay via Monobank', 'Starostina Theme');
-        pll_register_string('starostina', 'After successful payment...', 'Starostina Theme');
-        pll_register_string('starostina', 'Download', 'Starostina Theme');
-        pll_register_string('starostina', 'Click to download file', 'Starostina Theme');
-        pll_register_string('starostina', 'Download PDF', 'Starostina Theme');
         pll_register_string('starostina', 'Return to main', 'Starostina Theme');
         pll_register_string('starostina', 'Starostina', 'Starostina Theme');
         pll_register_string('starostina', 'Valeriya', 'Starostina Theme');
-        pll_register_string('starostina', 'Processing...', 'Starostina Theme');
-        pll_register_string('starostina', 'Payment Failed', 'Starostina Theme');
-        pll_register_string('starostina', 'Payment Successful', 'Starostina Theme');
         pll_register_string('starostina', 'Checking payment status...', 'Starostina Theme');
     }
 });
@@ -72,6 +73,8 @@ add_action('acf/init', function() {
     }
 
     if( function_exists('acf_add_local_field_group') ):
+        
+        // --- Группа 1: Монобанк ---
         acf_add_local_field_group(array(
             'key' => 'group_theme_settings',
             'title' => 'Інтеграція Monobank',
@@ -81,7 +84,6 @@ add_action('acf/init', function() {
                     'label' => 'X-Token (API Monobank)',
                     'name' => 'monobank_token',
                     'type' => 'text', 
-                    'instructions' => 'Вставте сюди ваш X-Token з https://api.monobank.ua/',
                     'required' => 1,
                 ),
                 array(
@@ -104,9 +106,10 @@ add_action('acf/init', function() {
             ),
         ));
 
+        // --- Группа 2: Лендинг (Главная) ---
         acf_add_local_field_group(array(
             'key' => 'group_landing_settings',
-            'title' => 'Налаштування Лендінгу',
+            'title' => 'Налаштування Лендінгу (Головна)',
             'fields' => array(
                 array(
                     'key' => 'field_hero_image',
@@ -116,8 +119,15 @@ add_action('acf/init', function() {
                     'return_format' => 'url',
                 ),
                 array(
+                    'key' => 'field_old_price',
+                    'label' => 'Стара ціна (закреслена)',
+                    'name' => 'product_old_price',
+                    'type' => 'number',
+                    'instructions' => 'Відображається як знижка. Залиште пустим, якщо не потрібно.',
+                ),
+                array(
                     'key' => 'field_price',
-                    'label' => 'Ціна (UAH)',
+                    'label' => 'Актуальна Ціна (UAH)',
                     'name' => 'product_price',
                     'type' => 'number',
                     'default_value' => 450,
@@ -136,18 +146,27 @@ add_action('acf/init', function() {
                     'type' => 'repeater',
                     'sub_fields' => array(
                         array(
-                            'key' => 'field_social_icon',
-                            'label' => 'Клас іконки FontAwesome (напр. fab fa-instagram)',
-                            'name' => 'icon_class',
-                            'type' => 'text',
+                            'key' => 'field_social_image',
+                            'label' => 'Іконка (Зображення)',
+                            'name' => 'icon_image',
+                            'type' => 'image',
+                            'return_format' => 'url',
+                            'preview_size' => 'thumbnail',
                         ),
                         array(
                             'key' => 'field_social_url',
-                            'label' => 'Посилання',
+                            'label' => 'Посилання (URL, tel:, viber:)',
                             'name' => 'url',
-                            'type' => 'url',
+                            'type' => 'text', 
                         ),
                     ),
+                ),
+                array(
+                    'key' => 'field_payment_footer_text',
+                    'label' => 'Текст під кнопкою оплати',
+                    'name' => 'payment_footer_text',
+                    'type' => 'text',
+                    'default_value' => '*Після успішної оплати сторінка автоматично оновиться і ви отримаєте доступ до файлу.',
                 ),
             ),
             'location' => array(
@@ -167,6 +186,69 @@ add_action('acf/init', function() {
                 ),
             ),
         ));
+
+        // --- Группа 3: Настройки Страницы Успеха ---
+        acf_add_local_field_group(array(
+            'key' => 'group_success_page_settings',
+            'title' => 'Налаштування: Сторінка Успіху',
+            'fields' => array(
+                array(
+                    'key' => 'field_success_title',
+                    'label' => 'Заголовок успіху',
+                    'name' => 'success_title',
+                    'type' => 'text',
+                    'default_value' => 'Payment Successful',
+                    'instructions' => 'Великий рукописний текст (напр. "Завантаження")',
+                ),
+                array(
+                    'key' => 'field_success_subtitle',
+                    'label' => 'Підзаголовок успіху',
+                    'name' => 'success_subtitle',
+                    'type' => 'text',
+                    'default_value' => 'Click to download file',
+                    'instructions' => 'Текст перед кнопкою (напр. "НАТИСНІТЬ ДЛЯ ЗАВАНТАЖЕННЯ")',
+                ),
+                array(
+                    'key' => 'field_download_btn_text',
+                    'label' => 'Текст на кнопці скачування',
+                    'name' => 'download_btn_text',
+                    'type' => 'text',
+                    'default_value' => 'Download PDF',
+                ),
+                array(
+                    'key' => 'field_thank_you_text',
+                    'label' => 'Текст подяки (внизу)',
+                    'name' => 'thank_you_text',
+                    'type' => 'textarea',
+                    'rows' => 3,
+                    'default_value' => '"Дякую за довіру! Сподіваюсь цей гід допоможе тобі харчуватись смачно та корисно."',
+                ),
+                array(
+                    'key' => 'field_error_title',
+                    'label' => 'Заголовок помилки',
+                    'name' => 'error_title',
+                    'type' => 'text',
+                    'default_value' => 'Ooops...',
+                ),
+                array(
+                    'key' => 'field_error_text',
+                    'label' => 'Текст помилки',
+                    'name' => 'error_text',
+                    'type' => 'text',
+                    'default_value' => 'Payment info not found.',
+                ),
+            ),
+            'location' => array(
+                array(
+                    array(
+                        'param' => 'page_template',
+                        'operator' => '==',
+                        'value' => 'template-payment-success.php',
+                    ),
+                ),
+            ),
+        ));
+
     endif;
 });
 
@@ -201,7 +283,6 @@ function handle_create_mono_invoice() {
     $page_id = intval($_POST['page_id']);
     $price_uah = get_field('product_price', $page_id) ?: 450;
     
-    // Добавляем параметр, хотя надеемся больше на localStorage
     $redirect_url = add_query_arg('payment_check', '1', $success_page_url);
 
     $payload = array(
@@ -230,21 +311,18 @@ function handle_create_mono_invoice() {
     if (isset($body['pageUrl']) && isset($body['invoiceId'])) {
         wp_send_json_success(array(
             'url' => $body['pageUrl'],
-            'invoiceId' => $body['invoiceId'] // ВАЖНО: Возвращаем ID фронтенду
+            'invoiceId' => $body['invoiceId']
         ));
     } else {
         wp_send_json_error(array('message' => 'Mono Error', 'debug' => $body));
     }
 }
 
-// 2. AJAX CHECK STATUS (НОВАЯ ФУНКЦИЯ ДЛЯ JS)
+// 2. AJAX CHECK STATUS
 add_action('wp_ajax_check_mono_status', 'handle_check_mono_status');
 add_action('wp_ajax_nopriv_check_mono_status', 'handle_check_mono_status');
 
 function handle_check_mono_status() {
-    // В этом запросе может не быть nonce, если мы его не передали, но лучше проверить если есть
-    // Для простоты пока без strict nonce check на чтение статуса (публичная инфа)
-    
     $invoice_id = sanitize_text_field($_POST['invoice_id']);
     if (!$invoice_id) wp_send_json_error(array('message' => 'No ID'));
 
