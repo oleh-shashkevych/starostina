@@ -52,13 +52,14 @@ add_action('init', function() {
         pll_register_string('starostina', 'Starostina', 'Starostina Theme');
         pll_register_string('starostina', 'Valeriya', 'Starostina Theme');
         pll_register_string('starostina', 'Processing...', 'Starostina Theme');
+        pll_register_string('starostina', 'Payment Failed', 'Starostina Theme');
+        pll_register_string('starostina', 'Payment Successful', 'Starostina Theme');
+        pll_register_string('starostina', 'Checking payment status...', 'Starostina Theme');
     }
 });
 
-// 3. ACF Settings & Fields
+// 3. ACF Settings
 add_action('acf/init', function() {
-    
-    // A. Создаем страницу настроек темы (Только в ACF Pro)
     if( function_exists('acf_add_options_page') ) {
         acf_add_options_page(array(
             'page_title'    => 'Налаштування Теми',
@@ -71,8 +72,6 @@ add_action('acf/init', function() {
     }
 
     if( function_exists('acf_add_local_field_group') ):
-        
-        // B. Группа полей: Настройки Монобанка (в глобальных настройках)
         acf_add_local_field_group(array(
             'key' => 'group_theme_settings',
             'title' => 'Інтеграція Monobank',
@@ -81,9 +80,17 @@ add_action('acf/init', function() {
                     'key' => 'field_monobank_token',
                     'label' => 'X-Token (API Monobank)',
                     'name' => 'monobank_token',
-                    'type' => 'text', // Можно использовать 'password', если не хочешь, чтобы он светился
+                    'type' => 'text', 
                     'instructions' => 'Вставте сюди ваш X-Token з https://api.monobank.ua/',
                     'required' => 1,
+                ),
+                array(
+                    'key' => 'field_success_page',
+                    'label' => 'Сторінка успішної оплати',
+                    'name' => 'success_page_link',
+                    'type' => 'page_link', 
+                    'required' => 1,
+                    'post_type' => array('page'),
                 ),
             ),
             'location' => array(
@@ -97,7 +104,6 @@ add_action('acf/init', function() {
             ),
         ));
 
-        // C. Группа полей: Лендинг (на странице)
         acf_add_local_field_group(array(
             'key' => 'group_landing_settings',
             'title' => 'Налаштування Лендінгу',
@@ -174,13 +180,11 @@ add_action('after_setup_theme', function() {
 // MONOBANK LOGIC
 // ==========================================
 
-// Вспомогательная функция для получения токена
 function get_monobank_token() {
-    // 'option' означает, что мы берем поле из страницы настроек, а не текущего поста
     return get_field('monobank_token', 'option');
 }
 
-// A. AJAX Handler для создания платежа
+// 1. AJAX CREATE INVOICE
 add_action('wp_ajax_create_mono_invoice', 'handle_create_mono_invoice');
 add_action('wp_ajax_nopriv_create_mono_invoice', 'handle_create_mono_invoice');
 
@@ -189,22 +193,20 @@ function handle_create_mono_invoice() {
 
     $token = get_monobank_token();
     if (!$token) {
-        wp_send_json_error(array('message' => 'API Token не налаштовано в адмінці!'));
+        wp_send_json_error(array('message' => 'API Token error'));
         return;
     }
 
+    $success_page_url = get_field('success_page_link', 'option') ?: home_url();
     $page_id = intval($_POST['page_id']);
     $price_uah = get_field('product_price', $page_id) ?: 450;
     
-    // Monobank принимает сумму в копейках
-    $amount = $price_uah * 100; 
-
-    // Формируем ссылку возврата
-    $redirect_url = get_permalink($page_id); 
+    // Добавляем параметр, хотя надеемся больше на localStorage
+    $redirect_url = add_query_arg('payment_check', '1', $success_page_url);
 
     $payload = array(
-        'amount' => $amount,
-        'ccy' => 980, // Гривна
+        'amount' => $price_uah * 100,
+        'ccy' => 980,
         'merchantPaymInfo' => array(
             'reference' => 'order_' . time() . '_' . rand(1000, 9999),
             'destination' => 'Nutrition Guide Payment',
@@ -215,10 +217,7 @@ function handle_create_mono_invoice() {
     );
 
     $response = wp_remote_post('https://api.monobank.ua/api/merchant/invoice/create', array(
-        'headers' => array(
-            'X-Token' => $token, // Используем токен из админки
-            'Content-Type' => 'application/json'
-        ),
+        'headers' => array('X-Token' => $token, 'Content-Type' => 'application/json'),
         'body' => json_encode($payload)
     ));
 
@@ -228,35 +227,41 @@ function handle_create_mono_invoice() {
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
 
-    if (isset($body['pageUrl'])) {
-        wp_send_json_success(array('url' => $body['pageUrl']));
+    if (isset($body['pageUrl']) && isset($body['invoiceId'])) {
+        wp_send_json_success(array(
+            'url' => $body['pageUrl'],
+            'invoiceId' => $body['invoiceId'] // ВАЖНО: Возвращаем ID фронтенду
+        ));
     } else {
-        wp_send_json_error(array('message' => 'Mono API Error', 'debug' => $body));
+        wp_send_json_error(array('message' => 'Mono Error', 'debug' => $body));
     }
 }
 
-// B. Функция проверки статуса платежа
-function check_monobank_payment_status($invoice_id) {
-    if (!$invoice_id) return false;
+// 2. AJAX CHECK STATUS (НОВАЯ ФУНКЦИЯ ДЛЯ JS)
+add_action('wp_ajax_check_mono_status', 'handle_check_mono_status');
+add_action('wp_ajax_nopriv_check_mono_status', 'handle_check_mono_status');
+
+function handle_check_mono_status() {
+    // В этом запросе может не быть nonce, если мы его не передали, но лучше проверить если есть
+    // Для простоты пока без strict nonce check на чтение статуса (публичная инфа)
+    
+    $invoice_id = sanitize_text_field($_POST['invoice_id']);
+    if (!$invoice_id) wp_send_json_error(array('message' => 'No ID'));
 
     $token = get_monobank_token();
-    if (!$token) return false;
+    if (!$token) wp_send_json_error(array('message' => 'No Token'));
 
     $response = wp_remote_get('https://api.monobank.ua/api/merchant/invoice/status?invoiceId=' . $invoice_id, array(
-        'headers' => array(
-            'X-Token' => $token, // Используем токен из админки
-            'Content-Type' => 'application/json'
-        )
+        'headers' => array('X-Token' => $token, 'Content-Type' => 'application/json')
     ));
 
-    if (is_wp_error($response)) return false;
+    if (is_wp_error($response)) wp_send_json_error(array('message' => 'API Error'));
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
 
-    // Статус 'success' означает успешную оплату
     if (isset($body['status']) && $body['status'] === 'success') {
-        return true;
+        wp_send_json_success($body);
+    } else {
+        wp_send_json_error($body);
     }
-
-    return false;
 }

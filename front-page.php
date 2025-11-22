@@ -1,35 +1,16 @@
 <?php 
-/* * Логика проверки оплаты должна быть ДО вывода HTML
- */
-$is_paid = false;
-$verification_error = false;
-
-// Если Монобанк вернул нас с ID инвойса
-if (isset($_GET['invoiceId'])) {
-    $invoice_id = sanitize_text_field($_GET['invoiceId']);
-    // Вызываем функцию проверки из functions.php
-    if (function_exists('check_monobank_payment_status') && check_monobank_payment_status($invoice_id)) {
-        $is_paid = true;
-    } else {
-        $verification_error = true; // Оплата не прошла или ошибка
-    }
-}
-
 get_header(); 
 
 $current_page_id = get_queried_object_id();
 if ($current_page_id === 0) $current_page_id = get_option('page_on_front');
 
-// ACF поля
 $hero_image = get_field('hero_image', $current_page_id) ?: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=1000&auto=format&fit=crop';
 $price = get_field('product_price', $current_page_id) ?: 450;
-$file_url = get_field('product_file', $current_page_id);
 $socials = get_field('social_links', $current_page_id);
 ?>
 
 <!-- SCREEN 1: HERO SECTION -->
 <section id="hero" class="min-h-screen flex flex-col md:flex-row w-full relative">
-    <!-- Left Side -->
     <div class="w-full md:w-1/3 bg-dark-bg relative flex items-end justify-center overflow-hidden h-[50vh] md:h-auto">
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[110%] h-[70%] border border-white/30 rounded-[100px] rotate-12 pointer-events-none"></div>
         <div class="relative z-10 w-full h-full flex items-end justify-center pb-0">
@@ -37,9 +18,7 @@ $socials = get_field('social_links', $current_page_id);
         </div>
     </div>
 
-    <!-- Right Side -->
     <div class="w-full md:w-2/3 bg-white flex flex-col justify-center p-8 md:p-16 lg:p-24 relative">
-        
         <div class="absolute top-8 right-8 z-20">
             <ul class="flex gap-4 uppercase text-sm font-semibold tracking-widest">
                 <?php if (function_exists('pll_the_languages')) pll_the_languages(array('show_flags'=>0,'show_names'=>1)); ?>
@@ -104,12 +83,6 @@ $socials = get_field('social_links', $current_page_id);
             <?php echo function_exists('pll__') ? pll__('Cost:') : 'Cost:'; ?> <span class="font-semibold text-black"><?php echo $price; ?> UAH</span>
         </p>
 
-        <?php if($verification_error): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
-                Оплата не підтверджена або скасована. Спробуйте ще раз.
-            </div>
-        <?php endif; ?>
-
         <button id="pay-button" class="transform hover:scale-105 transition duration-300 w-full md:w-auto bg-black text-white px-12 py-5 text-lg tracking-widest uppercase font-serif hover:bg-gray-800 shadow-2xl relative overflow-hidden">
             <span id="btn-text">
                 <?php echo function_exists('pll__') ? pll__('Pay via Monobank') : 'Pay via Monobank'; ?> <i class="fas fa-credit-card ml-2"></i>
@@ -125,53 +98,17 @@ $socials = get_field('social_links', $current_page_id);
     </div>
 </section>
 
-<!-- SCREEN 3: SUCCESS (Только если оплачено) -->
-<?php if ($is_paid): ?>
-<style>
-    #success-screen { display: flex !important; }
-    /* Блокируем скролл, чтобы юзер видел только успех */
-    body { overflow: hidden; } 
-</style>
-
-<section id="success-screen" class="fixed inset-0 bg-beige-bg z-50 flex flex-col items-center justify-center text-center p-6">
-    <div class="max-w-3xl w-full animate-fade-in-up">
-        <h2 class="font-script text-5xl md:text-7xl mb-2 text-gray-800">
-            <?php echo function_exists('pll__') ? pll__('Download') : 'Download'; ?>
-        </h2>
-        <div class="h-px w-24 bg-black mx-auto mb-8"></div>
-        <h3 class="text-2xl md:text-4xl font-serif uppercase tracking-wider mb-6">
-            <?php echo function_exists('pll__') ? pll__('Click to download file') : 'Click to download'; ?>
-        </h3>
-
-        <?php if($file_url): ?>
-        <a href="<?php echo esc_url($file_url); ?>" download class="inline-flex items-center gap-3 transform hover:scale-105 transition duration-300 bg-black text-white px-10 py-5 text-lg tracking-widest uppercase font-serif hover:bg-gray-800 shadow-2xl">
-            <i class="fas fa-file-pdf"></i> <?php echo function_exists('pll__') ? pll__('Download PDF') : 'Download PDF'; ?>
-        </a>
-        <?php else: ?>
-            <p class="text-red-500">Файл не задан в админке!</p>
-        <?php endif; ?>
-
-        <div class="mt-12">
-            <a href="<?php echo remove_query_arg('invoiceId'); ?>" class="text-gray-500 text-sm hover:text-black underline underline-offset-4">
-                <?php echo function_exists('pll__') ? pll__('Return to main') : 'Return to main'; ?>
-            </a>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
-
 <script>
     document.getElementById('pay-button').addEventListener('click', function() {
         const btn = this;
         const btnText = document.getElementById('btn-text');
         const btnLoader = document.getElementById('btn-loader');
 
-        // UI: Показываем загрузку
+        // UI: Loading
         btnText.classList.add('opacity-0');
         btnLoader.classList.remove('hidden');
         btn.disabled = true;
 
-        // AJAX запрос к WordPress
         const formData = new FormData();
         formData.append('action', 'create_mono_invoice');
         formData.append('nonce', wpData.nonce);
@@ -184,11 +121,15 @@ $socials = get_field('social_links', $current_page_id);
         .then(response => response.json())
         .then(data => {
             if(data.success) {
-                // Редирект на Monobank
+                // !!! ВАЖНО !!! Сохраняем ID в браузер перед уходом
+                if(data.data.invoiceId) {
+                    localStorage.setItem('starostina_invoice_id', data.data.invoiceId);
+                }
+                
+                // Редирект
                 window.location.href = data.data.url;
             } else {
-                alert('Ошибка создания платежа: ' + (data.data.message || 'Unknown error'));
-                // Возвращаем кнопку
+                alert('Помилка: ' + (data.data.message || 'Unknown error'));
                 btnText.classList.remove('opacity-0');
                 btnLoader.classList.add('hidden');
                 btn.disabled = false;
@@ -196,7 +137,7 @@ $socials = get_field('social_links', $current_page_id);
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Ошибка соединения');
+            alert('Помилка з\'єднання');
             btnText.classList.remove('opacity-0');
             btnLoader.classList.add('hidden');
             btn.disabled = false;
