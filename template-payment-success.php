@@ -3,15 +3,12 @@
 Template Name: Результат Оплати
 */
 
-// Получаем ссылку на файл для JS (из настроек лендинга)
+// ... (PHP код получения полей ACF оставляем как был) ...
 $front_page_id = get_option('page_on_front');
 if (function_exists('pll_get_post')) {
     $front_page_id = pll_get_post($front_page_id);
 }
 $file_url = get_field('product_file', $front_page_id);
-
-// Получаем тексты из ACF текущей страницы (шаблона успеха)
-// Используем get_queried_object_id() чтобы брать поля именно этой страницы
 $page_id = get_queried_object_id();
 
 $success_title = get_field('success_title', $page_id) ?: 'Payment Successful';
@@ -21,15 +18,19 @@ $thank_you_text = get_field('thank_you_text', $page_id);
 $error_title = get_field('error_title', $page_id) ?: 'Ooops...';
 $error_text = get_field('error_text', $page_id) ?: 'Payment info not found.';
 
+// ПОДГОТОВКА ПЕРЕВОДОВ ДЛЯ JS
+$js_conn_error = function_exists('pll__') ? pll__('Connection error.') : 'Connection error.';
+$js_status_label = function_exists('pll__') ? pll__('Payment status:') : 'Payment status:';
+$js_unknown = function_exists('pll__') ? pll__('Unknown') : 'Unknown';
+
 get_header(); 
 ?>
 
 <section class="min-h-screen bg-beige-bg flex flex-col items-center justify-center text-center p-6 md:p-8 relative">
-    
+    <!-- (HTML разметка остается той же самой, сократил для удобства чтения) -->
     <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-black/10 to-transparent"></div>
 
     <div class="max-w-3xl w-full animate-fade-in-up relative z-10">
-        
         <!-- LOADER -->
         <div id="status-block">
             <h2 class="font-script text-4xl md:text-6xl mb-8 text-gray-800">
@@ -43,20 +44,13 @@ get_header();
 
         <!-- SUCCESS -->
         <div id="success-block" class="hidden">
-            <!-- Динамический заголовок из ACF -->
             <h2 class="font-script text-5xl md:text-8xl mb-4 text-gray-900 transform -rotate-2">
                 <?php echo esc_html($success_title); ?>
             </h2>
-            
-            <div class="flex justify-center mb-10">
-                <div class="h-px w-16 md:w-24 bg-black/20"></div>
-            </div>
-
-            <!-- Динамический подзаголовок -->
+            <div class="flex justify-center mb-10"><div class="h-px w-16 md:w-24 bg-black/20"></div></div>
             <h3 class="text-lg md:text-3xl font-serif uppercase tracking-widest mb-8 text-gray-800 px-4">
                 <?php echo esc_html($success_subtitle); ?>
             </h3>
-
             <?php if($file_url): ?>
             <div class="relative group inline-block w-full max-w-xs md:max-w-none">
                 <div class="absolute -inset-1 bg-black/10 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
@@ -67,13 +61,11 @@ get_header();
             </div>
             <?php else: ?>
                 <div class="p-6 bg-red-50 border border-red-100 text-red-600 rounded-lg">
-                    <i class="fas fa-exclamation-triangle mb-2"></i><br>
                     File not found. Please contact support.
                 </div>
             <?php endif; ?>
-
              <?php if($thank_you_text): ?>
-             <p class="mt-12 text-sm md:text-lg text-gray-600 font-serif italic max-w-xxl mx-auto leading-relaxed px-4">
+             <p class="mt-12 text-sm md:text-lg text-gray-600 font-serif italic max-w-lg mx-auto leading-relaxed px-4">
                 <?php echo nl2br(esc_html($thank_you_text)); ?>
             </p>
             <?php endif; ?>
@@ -89,7 +81,7 @@ get_header();
                     <?php echo esc_html($error_text); ?>
                 </p>
                 <button onclick="location.href='<?php echo home_url(); ?>'" class="uppercase tracking-widest text-xs font-bold border-b border-black pb-1 hover:text-gray-600 transition">
-                    Try Again
+                    Спробувати ще
                 </button>
             </div>
         </div>
@@ -105,6 +97,13 @@ get_header();
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Объект с переводами из PHP
+    const jsText = {
+        connError: "<?php echo esc_js($js_conn_error); ?>",
+        statusPrefix: "<?php echo esc_js($js_status_label); ?>",
+        unknown: "<?php echo esc_js($js_unknown); ?>"
+    };
+
     const statusBlock = document.getElementById('status-block');
     const successBlock = document.getElementById('success-block');
     const errorBlock = document.getElementById('error-block');
@@ -121,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         debugText.innerText = "Checking URL...";
     }
 
+    // Если нет ID - показываем ошибку из ACF поля (оно уже переведено на уровне PHP выше)
     if (!invoiceId) {
         showError("<?php echo esc_js($error_text); ?>");
         return;
@@ -152,11 +152,14 @@ document.addEventListener('DOMContentLoaded', function() {
             successBlock.classList.remove('hidden');
             localStorage.removeItem('starostina_invoice_id');
         } else {
-            showError("Payment status: " + (data.data?.status || "Unknown"));
+            // ИСПОЛЬЗУЕМ ПЕРЕВОДЫ
+            const status = data.data?.status || jsText.unknown;
+            showError(jsText.statusPrefix + " " + status);
         }
     })
     .catch(err => {
-        showError("Connection error.");
+        // ИСПОЛЬЗУЕМ ПЕРЕВОДЫ
+        showError(jsText.connError);
     });
 
     function showError(msg) {

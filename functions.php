@@ -56,6 +56,9 @@ add_action('init', function() {
         pll_register_string('starostina', 'Starostina', 'Starostina Theme');
         pll_register_string('starostina', 'Valeriya', 'Starostina Theme');
         pll_register_string('starostina', 'Checking payment status...', 'Starostina Theme');
+        pll_register_string('starostina', 'Connection error.', 'Starostina Theme');
+        pll_register_string('starostina', 'Payment status:', 'Starostina Theme');
+        pll_register_string('starostina', 'Unknown', 'Starostina Theme');
     }
 });
 

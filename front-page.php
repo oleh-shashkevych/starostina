@@ -152,7 +152,7 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
     // ============================================
     // DEVELOPER MODE: TRUE = Без оплаты (тест)
     // ============================================
-    const DEV_MODE = true; 
+    const DEV_MODE = false; 
     // ============================================
 
     document.getElementById('pay-button').addEventListener('click', function() {
