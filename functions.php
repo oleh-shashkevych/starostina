@@ -18,7 +18,7 @@ function starostina_scripts() {
                     fontFamily: {
                         'sans': ['Montserrat', 'sans-serif'],
                         'serif': ['Playfair Display', 'serif'],
-                        'script': ['Great Vibes', 'Marck Script', 'cursive'], 
+                        'script': ['Playfair Display', 'Great Vibes', 'Marck Script', 'cursive'], 
                     },
                     screens: {
                         'xs': '475px',

@@ -49,8 +49,8 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
                     <?php echo function_exists('pll__') ? pll__('Starostina') : 'Starostina'; ?>
                 </h1>
                 <!-- Handwritten Name -->
-                <div class="relative -mt-3 md:mt-3 md:ml-32 z-10 flex justify-center md:justify-start">
-                    <span class="font-script text-5xl xs:text-6xl md:text-8xl lg:text-9xl text-black block transform -rotate-3 md:origin-left pb-4 md:pb-0">
+                <div class="relative -mt-3 md:-mt-3 md:ml-32 z-10 flex justify-center md:justify-start">
+                    <span class="font-script text-5xl xs:text-6xl md:text-8xl lg:text-9xl text-black block transform -rotate-0 md:origin-left pb-4 md:pb-0">
                          <?php echo function_exists('pll__') ? pll__('Valeriya') : 'Valeriya'; ?>
                     </span>
                 </div>
@@ -79,11 +79,14 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
 
             <!-- CTA Button -->
             <div class="fade-in-up delay-400 flex justify-center md:justify-start">
-                <button onclick="scrollToPayment()" class="group relative px-8 py-4 md:px-10 md:py-5 bg-gray-50 rounded-full overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 w-full md:w-auto">
-                    <div class="absolute inset-0 w-0 bg-black transition-all duration-[400ms] ease-out group-hover:w-full"></div>
-                    <span class="relative text-gray-900 group-hover:text-white font-serif tracking-widest text-xs md:text-sm uppercase flex items-center justify-center gap-4">
+                <button onclick="scrollToPayment()" class="group relative px-8 py-4 md:px-10 md:py-5 bg-black rounded-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-black w-full md:w-auto">
+                    <!-- White overlay on hover -->
+                    <div class="absolute inset-0 w-0 bg-white transition-all duration-[400ms] ease-out group-hover:w-full"></div>
+                    
+                    <!-- Text colors inverted -->
+                    <span class="relative text-white group-hover:text-black font-serif tracking-widest text-xs md:text-sm uppercase flex items-center justify-center gap-4">
                         <?php echo function_exists('pll__') ? pll__('BUY "NUTRITION GUIDE"') : 'BUY GUIDE'; ?>
-                        <i class="fas fa-arrow-down text-[10px] animate-bounce group-hover:text-white"></i>
+                        <i class="fas fa-arrow-down text-[10px] animate-bounce text-white group-hover:text-black"></i>
                     </span>
                 </button>
             </div>
@@ -96,7 +99,7 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
     
     <div class="max-w-4xl w-full relative z-10" data-aos="fade-up">
         
-        <h2 class="font-script text-5xl md:text-8xl mb-4 md:mb-6 text-gray-800 transform -rotate-2">
+        <h2 class="font-script text-5xl md:text-8xl mb-4 md:mb-6 text-gray-800 transform -rotate-0">
             <?php echo function_exists('pll__') ? pll__('Payment') : 'Payment'; ?>
         </h2>
         
