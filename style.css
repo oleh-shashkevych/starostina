@@ -1,0 +1,50 @@
+/*
+Theme Name: Starostina Theme
+Theme URI: https://example.com
+Author: Oleg Shashkevych
+Description: Custom Landing Page for Valeriya Starostina with Monobank integration.
+Version: 1.0
+Text Domain: starostina
+*/
+
+/* Мы используем Tailwind через CDN для скорости разработки, 
+  поэтому здесь стилей будет минимум. 
+*/
+
+body {
+    overflow-x: hidden;
+}
+
+/* Анимации */
+.fade-in-up {
+    animation: fadeInUp 1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.delay-200 { animation-delay: 0.2s; }
+.delay-400 { animation-delay: 0.4s; }
+
+/* Скроллбар */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+/* Скрытие экрана успеха по умолчанию */
+#success-screen {
+    display: none;
+}
