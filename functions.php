@@ -1,9 +1,10 @@
 <?php
 
 // 1. Подключение стилей и скриптов
-function starostina_scripts() {
+function starostina_scripts()
+{
     wp_enqueue_script('tailwind', 'https://cdn.tailwindcss.com', array(), '3.0', false);
-    
+
     // Конфигурация Tailwind
     // ВАЖНО: В font-family 'script' мы ставим сначала Great Vibes, потом Marck Script
     wp_add_inline_script('tailwind', "
@@ -29,11 +30,11 @@ function starostina_scripts() {
     ");
 
     wp_enqueue_style('fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-    
+
     // UPDATED: Подключаем ВСЕ шрифты одной ссылкой (Great Vibes + Marck Script + остальные)
     // Это самый надежный способ, чтобы Google отдал их все сразу.
     wp_enqueue_style('google-fonts', 'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Marck+Script&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap&subset=cyrillic,latin');
-    
+
     wp_enqueue_style('main-style', get_stylesheet_uri());
 
     wp_localize_script('tailwind', 'wpData', array(
@@ -44,7 +45,7 @@ function starostina_scripts() {
 add_action('wp_enqueue_scripts', 'starostina_scripts');
 
 // 2. Polylang Strings
-add_action('init', function() {
+add_action('init', function () {
     if (function_exists('pll_register_string')) {
         pll_register_string('starostina', 'Fitness Trainer & Nutritionist', 'Starostina Theme');
         pll_register_string('starostina', 'BUY "NUTRITION GUIDE"', 'Starostina Theme');
@@ -63,20 +64,20 @@ add_action('init', function() {
 });
 
 // 3. ACF Settings
-add_action('acf/init', function() {
-    if( function_exists('acf_add_options_page') ) {
+add_action('acf/init', function () {
+    if (function_exists('acf_add_options_page')) {
         acf_add_options_page(array(
-            'page_title'    => 'Налаштування Теми',
-            'menu_title'    => 'Налаштування Теми',
-            'menu_slug'     => 'theme-general-settings',
-            'capability'    => 'edit_posts',
-            'redirect'      => false,
-            'icon_url'      => 'dashicons-admin-generic',
+            'page_title' => 'Налаштування Теми',
+            'menu_title' => 'Налаштування Теми',
+            'menu_slug' => 'theme-general-settings',
+            'capability' => 'edit_posts',
+            'redirect' => false,
+            'icon_url' => 'dashicons-admin-generic',
         ));
     }
 
-    if( function_exists('acf_add_local_field_group') ):
-        
+    if (function_exists('acf_add_local_field_group')):
+
         // --- Группа 1: Монобанк ---
         acf_add_local_field_group(array(
             'key' => 'group_theme_settings',
@@ -86,14 +87,14 @@ add_action('acf/init', function() {
                     'key' => 'field_monobank_token',
                     'label' => 'X-Token (API Monobank)',
                     'name' => 'monobank_token',
-                    'type' => 'text', 
+                    'type' => 'text',
                     'required' => 1,
                 ),
                 array(
                     'key' => 'field_success_page',
                     'label' => 'Сторінка успішної оплати',
                     'name' => 'success_page_link',
-                    'type' => 'page_link', 
+                    'type' => 'page_link',
                     'required' => 1,
                     'post_type' => array('page'),
                 ),
@@ -160,7 +161,7 @@ add_action('acf/init', function() {
                             'key' => 'field_social_url',
                             'label' => 'Посилання (URL, tel:, viber:)',
                             'name' => 'url',
-                            'type' => 'text', 
+                            'type' => 'text',
                         ),
                     ),
                 ),
@@ -168,7 +169,7 @@ add_action('acf/init', function() {
                     'key' => 'field_payment_footer_text',
                     'label' => 'Текст під кнопкою оплати',
                     'name' => 'payment_footer_text',
-                    'type' => 'text',
+                    'type' => 'textarea',
                     'default_value' => '*Після успішної оплати сторінка автоматично оновиться і ви отримаєте доступ до файлу.',
                 ),
             ),
@@ -255,7 +256,7 @@ add_action('acf/init', function() {
     endif;
 });
 
-add_action('after_setup_theme', function() {
+add_action('after_setup_theme', function () {
     if (!current_user_can('administrator')) {
         show_admin_bar(false);
     }
@@ -265,7 +266,8 @@ add_action('after_setup_theme', function() {
 // MONOBANK LOGIC
 // ==========================================
 
-function get_monobank_token() {
+function get_monobank_token()
+{
     return get_field('monobank_token', 'option');
 }
 
@@ -273,7 +275,8 @@ function get_monobank_token() {
 add_action('wp_ajax_create_mono_invoice', 'handle_create_mono_invoice');
 add_action('wp_ajax_nopriv_create_mono_invoice', 'handle_create_mono_invoice');
 
-function handle_create_mono_invoice() {
+function handle_create_mono_invoice()
+{
     check_ajax_referer('monobank_nonce', 'nonce');
 
     $token = get_monobank_token();
@@ -285,7 +288,7 @@ function handle_create_mono_invoice() {
     $success_page_url = get_field('success_page_link', 'option') ?: home_url();
     $page_id = intval($_POST['page_id']);
     $price_uah = get_field('product_price', $page_id) ?: 450;
-    
+
     $redirect_url = add_query_arg('payment_check', '1', $success_page_url);
 
     $payload = array(
@@ -295,8 +298,8 @@ function handle_create_mono_invoice() {
             'reference' => 'order_' . time() . '_' . rand(1000, 9999),
             'destination' => 'Nutrition Guide Payment',
         ),
-        'redirectUrl' => $redirect_url, 
-        'validity' => 3600, 
+        'redirectUrl' => $redirect_url,
+        'validity' => 3600,
         'paymentType' => 'debit',
     );
 
@@ -325,18 +328,22 @@ function handle_create_mono_invoice() {
 add_action('wp_ajax_check_mono_status', 'handle_check_mono_status');
 add_action('wp_ajax_nopriv_check_mono_status', 'handle_check_mono_status');
 
-function handle_check_mono_status() {
+function handle_check_mono_status()
+{
     $invoice_id = sanitize_text_field($_POST['invoice_id']);
-    if (!$invoice_id) wp_send_json_error(array('message' => 'No ID'));
+    if (!$invoice_id)
+        wp_send_json_error(array('message' => 'No ID'));
 
     $token = get_monobank_token();
-    if (!$token) wp_send_json_error(array('message' => 'No Token'));
+    if (!$token)
+        wp_send_json_error(array('message' => 'No Token'));
 
     $response = wp_remote_get('https://api.monobank.ua/api/merchant/invoice/status?invoiceId=' . $invoice_id, array(
         'headers' => array('X-Token' => $token, 'Content-Type' => 'application/json')
     ));
 
-    if (is_wp_error($response)) wp_send_json_error(array('message' => 'API Error'));
+    if (is_wp_error($response))
+        wp_send_json_error(array('message' => 'API Error'));
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
 
@@ -344,5 +351,57 @@ function handle_check_mono_status() {
         wp_send_json_success($body);
     } else {
         wp_send_json_error($body);
+    }
+}
+
+// ==========================================
+// FORCE PDF DOWNLOAD LOGIC
+// ==========================================
+add_action('init', 'handle_force_download_pdf');
+
+function handle_force_download_pdf()
+{
+    // Проверяем, есть ли в URL параметр ?download_guide=1
+    if (isset($_GET['download_guide']) && $_GET['download_guide'] == '1') {
+
+        // Получаем ID главной страницы (где лежат настройки)
+        $front_page_id = get_option('page_on_front');
+        if (function_exists('pll_get_post')) {
+            $front_page_id = pll_get_post($front_page_id);
+        }
+
+        // Получаем URL файла из ACF
+        $file_url = get_field('product_file', $front_page_id);
+
+        if (!$file_url) {
+            wp_die('File not configured.');
+        }
+
+        // Превращаем URL в физический путь на сервере (нужно для PHP)
+        // Например: http://site.com/wp-content/uploads/file.pdf -> /var/www/site/wp-content/uploads/file.pdf
+        $upload_dir = wp_upload_dir();
+        $file_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $file_url);
+
+        if (!file_exists($file_path)) {
+            wp_die('File not found on server.');
+        }
+
+        // Получаем имя файла
+        $filename = basename($file_path);
+
+        // ОТПРАВЛЯЕМ ЗАГОЛОВКИ (Вот это заставляет браузер скачивать)
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/pdf'); // Тип файла
+        header('Content-Disposition: attachment; filename="' . $filename . '"'); // Ключевой момент: attachment
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($file_path));
+
+        // Читаем файл и отдаем пользователю
+        readfile($file_path);
+
+        // Останавливаем WordPress, чтобы он не грузил HTML страницы
+        exit;
     }
 }
