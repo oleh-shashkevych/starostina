@@ -25,27 +25,35 @@ body {
 
 /* Firefox */
 html {
-    scrollbar-width: thin; /* Тонкий скроллбар */
-    scrollbar-color: #1a1a1a #efe3dd; /* Ползунок и Трек */
+    scrollbar-width: thin;
+    /* Тонкий скроллбар */
+    scrollbar-color: #1a1a1a #efe3dd;
+    /* Ползунок и Трек */
 }
 
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
-    width: 12px; /* Ширина всего элемента скроллбара */
+    width: 12px;
+    /* Ширина всего элемента скроллбара */
 }
 
 ::-webkit-scrollbar-track {
-    background: #efe3dd; /* Бежевый цвет фона (трека) */
+    background: #efe3dd;
+    /* Бежевый цвет фона (трека) */
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: #1a1a1a; /* Темно-серый цвет ползунка */
-    border-radius: 20px;       /* Полное скругление */
-    border: 3px solid #efe3dd; /* Внутренняя граница создает отступ, делая ползунок визуально тоньше и "парящим" */
+    background-color: #1a1a1a;
+    /* Темно-серый цвет ползунка */
+    border-radius: 20px;
+    /* Полное скругление */
+    border: 3px solid #efe3dd;
+    /* Внутренняя граница создает отступ, делая ползунок визуально тоньше и "парящим" */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: #333333; /* Немного светлее при наведении */
+    background-color: #333333;
+    /* Немного светлее при наведении */
 }
 
 /* ================================= */
@@ -64,16 +72,23 @@ html {
     }
 }
 
-.delay-200 { animation-delay: 0.2s; }
-.delay-400 { animation-delay: 0.4s; }
+.delay-200 {
+    animation-delay: 0.2s;
+}
+
+.delay-400 {
+    animation-delay: 0.4s;
+}
 
 /* Скроллбар */
 ::-webkit-scrollbar {
     width: 8px;
 }
+
 ::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
+
 ::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 4px;
@@ -82,4 +97,31 @@ html {
 /* Скрытие экрана успеха по умолчанию */
 #success-screen {
     display: none;
+}
+
+/* Стили для описания продукта (возвращаем маркеры списков) */
+.product-desc ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    /* Чтобы список центрировался блоком, если текст по центру */
+    text-align: left;
+    /* Сам текст списка читабельнее слева */
+}
+
+.product-desc li {
+    margin-bottom: 0.5rem;
+}
+
+.product-desc strong {
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* На мобильных выравниваем список по левому краю для удобства */
+@media (max-width: 768px) {
+    .product-desc {
+        text-align: left;
+    }
 }

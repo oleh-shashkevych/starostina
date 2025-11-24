@@ -123,6 +123,22 @@ add_action('acf/init', function () {
                     'return_format' => 'url',
                 ),
                 array(
+                    'key' => 'field_payment_subtitle',
+                    'label' => 'Заголовок блоку опису (напр. ГІД В ХАРЧУВАННІ)',
+                    'name' => 'payment_subtitle',
+                    'type' => 'text',
+                ),
+                array(
+                    'key' => 'field_payment_description',
+                    'label' => 'Опис продукту (Списки, жирний текст)',
+                    'name' => 'payment_description',
+                    'type' => 'wysiwyg', // Визуальный редактор для списков
+                    'tabs' => 'visual',
+                    'toolbar' => 'basic',
+                    'media_upload' => 0,
+                    'delay' => 0,
+                ),
+                array(
                     'key' => 'field_old_price',
                     'label' => 'Стара ціна (закреслена)',
                     'name' => 'product_old_price',

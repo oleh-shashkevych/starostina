@@ -7,6 +7,8 @@ if ($current_page_id === 0)
 
 // Поля
 $hero_image = get_field('hero_image', $current_page_id) ?: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=1000&auto=format&fit=crop';
+$payment_subtitle = get_field('payment_subtitle', $current_page_id);
+$payment_description = get_field('payment_description', $current_page_id);
 $price = get_field('product_price', $current_page_id) ?: 450;
 $old_price = get_field('product_old_price', $current_page_id);
 $socials = get_field('social_links', $current_page_id);
@@ -114,21 +116,32 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
 
     <div class="max-w-4xl w-full relative z-10" data-aos="fade-up">
 
-        <h2 class="font-script text-5xl md:text-8xl mb-4 md:mb-6 text-gray-800 transform -rotate-0">
+        <h2 class="font-script text-5xl md:text-8xl mb-6 text-gray-800 transform -rotate-0">
             <?php echo function_exists('pll__') ? pll__('Payment') : 'Payment'; ?>
         </h2>
 
-        <div class="flex flex-col items-center gap-6 mb-8 md:mb-12">
-            <div class="h-12 md:h-16 w-px bg-gray-400 opacity-30"></div>
+        <div class="mx-auto mb-10">
+            <?php if ($payment_subtitle): ?>
+                <h3 class="text-xl md:text-3xl font-serif uppercase tracking-widest mb-6 text-gray-900 font-bold">
+                    <?php echo esc_html($payment_subtitle); ?>
+                </h3>
+            <?php endif; ?>
+
+            <div class="w-full h-px bg-gray-300 opacity-50 mb-10 max-w-xs mx-auto"></div>
+
+            <?php if ($payment_description): ?>
+                <div
+                    class="product-desc text-left md:text-center text-sm md:text-lg text-gray-700 font-sans leading-relaxed">
+                    <?php echo $payment_description; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
-        <h3 class="text-xl md:text-4xl font-serif uppercase tracking-widest mb-8 text-gray-900 px-4">
+        <!-- <h3 class="text-lg md:text-2xl font-serif uppercase tracking-widest mb-8 text-gray-600 px-4">
             <?php echo function_exists('pll__') ? pll__('Click to pay') : 'Click to pay'; ?>
-        </h3>
+        </h3> -->
 
-        <!-- ЦЕНА И КНОПКА -->
         <div class="flex flex-col items-center gap-6">
-
             <div class="flex flex-col items-center justify-center">
                 <div class="inline-block border border-black/10 px-8 py-3 rounded-full backdrop-blur-sm bg-white/40">
                     <p class="text-base md:text-lg text-gray-600 font-light tracking-wide">
@@ -143,12 +156,10 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
                 </div>
             </div>
 
-            <!-- Payment Button -->
             <div class="relative group w-full max-w-xs md:max-w-xl mt-4">
                 <div
                     class="absolute -inset-1 bg-gradient-to-r from-gray-200 to-gray-400 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200">
                 </div>
-                <!-- UPDATED SIZE CLASSES -->
                 <button id="pay-button"
                     class="relative w-full bg-black text-white px-8 py-5 md:px-12 md:py-6 text-xs md:text-base tracking-[0.2em] uppercase font-sans font-bold hover:bg-gray-800 transition-all duration-300 shadow-2xl">
                     <span id="btn-text" class="flex items-center justify-center gap-3">
@@ -160,7 +171,6 @@ $success_url = $success_page_link ? get_permalink($success_page_link) : home_url
                     </span>
                 </button>
             </div>
-
         </div>
 
         <p
